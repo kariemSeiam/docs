@@ -7,8 +7,8 @@ const nextConfig = {
     unoptimized: true, // Required for static export
   },
   output: 'export', // Enable static exports
-  basePath: process.env.NODE_ENV === 'production' ? '/youtube-transcript-extractor' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/youtube-transcript-extractor' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/workspace' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/workspace' : '',
 }
 
 module.exports = nextConfig
