@@ -37,6 +37,7 @@ import {
   formatNumber 
 } from '@/lib/utils'
 import { fetchVideoTranscript, fetchPlaylistInfo } from '@/lib/youtube-api'
+import { DemoNotice } from '@/components/demo-notice'
 import type { 
   TranscriptSegment, 
   VideoInfo, 
@@ -189,6 +190,9 @@ export default function Home() {
             Extract transcripts from videos, playlists, and channels instantly
           </p>
         </motion.div>
+
+        {/* Demo Notice */}
+        <DemoNotice />
 
         {/* Input Section */}
         <motion.div
