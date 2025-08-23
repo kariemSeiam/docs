@@ -32,7 +32,7 @@ export function DemoNotice() {
               This is a demo version using mock data. For real transcript extraction, 
               a backend service is required due to CORS restrictions. Check the{' '}
               <a 
-                href="https://github.com/yourusername/youtube-transcript-extractor" 
+                href="https://github.com" 
                 className="underline hover:text-primary"
                 target="_blank"
                 rel="noopener noreferrer"
