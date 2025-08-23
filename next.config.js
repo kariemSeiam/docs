@@ -7,8 +7,8 @@ const nextConfig = {
     unoptimized: true, // Required for static export
   },
   output: 'export', // Enable static exports
-  basePath: process.env.NODE_ENV === 'production' ? '/workspace' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/workspace' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/docs' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/docs' : '',
 }
 
 module.exports = nextConfig
