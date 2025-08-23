@@ -7,25 +7,19 @@ import {
   Download, 
   Copy, 
   Search, 
-  Filter,
-  Calendar,
   Clock,
   Eye,
   ListVideo,
   Video,
   Users,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   CheckCircle,
-  AlertCircle,
   FileText,
-  PlayCircle
+  ExternalLink
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
 import { 
@@ -37,7 +31,6 @@ import {
   formatNumber 
 } from '@/lib/utils'
 import { extractVideoTranscript, extractPlaylistInfo } from '@/lib/youtube-master-extractor'
-import { DemoNotice } from '@/components/demo-notice'
 import type { 
   TranscriptSegment, 
   VideoInfo, 
@@ -55,9 +48,7 @@ export default function Home() {
   const [playlistInfo, setPlaylistInfo] = useState<PlaylistInfo | null>(null)
   const [transcript, setTranscript] = useState<TranscriptSegment[]>([])
   const [selectedVideos, setSelectedVideos] = useState<Set<string>>(new Set())
-  const [expandedTranscripts, setExpandedTranscripts] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
-  const [dateFilter, setDateFilter] = useState<{ from?: Date; to?: Date }>({})
   
   const { toast } = useToast()
 
@@ -73,12 +64,10 @@ export default function Home() {
     setContentType(type)
   }, [detectContentType])
 
-
-
   const handleSubmit = async () => {
     if (!url.trim()) {
       toast({
-        title: 'Error',
+        title: 'URL Required',
         description: 'Please enter a YouTube URL',
         variant: 'destructive'
       })
@@ -86,7 +75,7 @@ export default function Home() {
     }
 
     setLoading(true)
-    setLoadingMessage('Initializing...')
+    setLoadingMessage('Processing...')
     setVideoInfo(null)
     setPlaylistInfo(null)
     setTranscript([])
@@ -99,45 +88,35 @@ export default function Home() {
           throw new Error('Invalid YouTube video URL')
         }
 
-        setLoadingMessage('Fetching video information...')
+        setLoadingMessage('Extracting video data...')
         const data = await extractVideoTranscript(videoId)
         setVideoInfo(data.videoInfo)
         setTranscript(data.transcript)
         
-        if (data.transcript && data.transcript.length > 0) {
-          toast({
-            title: 'Success',
-            description: `Loaded transcript with ${data.transcript.length} segments`
-          })
-        } else {
-          toast({
-            title: 'Partial Success',
-            description: 'Video info loaded, but no transcript available for this video',
-            variant: 'destructive'
-          })
-        }
-              } else if (contentType === 'playlist') {
+        toast({
+          title: 'Success',
+          description: `Extracted ${data.transcript.length} transcript segments`
+        })
+      } else if (contentType === 'playlist') {
         const playlistId = extractPlaylistId(url)
         if (!playlistId) {
           throw new Error('Invalid YouTube playlist URL')
         }
 
-        setLoadingMessage('Loading playlist information...')
+        setLoadingMessage('Loading playlist...')
         const data = await extractPlaylistInfo(playlistId)
         setPlaylistInfo(data)
-        
-        // Auto-select all videos
         setSelectedVideos(new Set(data.videos.map((v: PlaylistVideo) => v.id)))
         
         toast({
-          title: 'Success',
-          description: `Loaded ${data.videos.length} videos from playlist`
+          title: 'Playlist Loaded',
+          description: `Found ${data.videos.length} videos`
         })
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to load content',
+        description: error instanceof Error ? error.message : 'Failed to process URL',
         variant: 'destructive'
       })
     } finally {
@@ -149,7 +128,7 @@ export default function Home() {
   const handleDownloadTranscript = useCallback(() => {
     if (!transcript.length) return
 
-    const content = transcript.map(seg => seg.text).join('\n\n')
+    const content = transcript.map(seg => `${formatDuration(Math.floor(seg.start))}: ${seg.text}`).join('\n\n')
     const blob = new Blob([content], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -160,14 +139,14 @@ export default function Home() {
     
     toast({
       title: 'Downloaded',
-      description: 'Transcript downloaded successfully'
+      description: 'Transcript saved to your device'
     })
   }, [transcript, videoInfo, toast])
 
   const handleCopyTranscript = useCallback(() => {
     if (!transcript.length) return
 
-    const content = transcript.map(seg => seg.text).join('\n\n')
+    const content = transcript.map(seg => seg.text).join(' ')
     navigator.clipboard.writeText(content)
     
     toast({
@@ -185,48 +164,40 @@ export default function Home() {
   }, [transcript, searchQuery])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Youtube className="w-10 h-10 text-red-500" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              YouTube Transcript Extractor
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Youtube className="w-8 h-8 text-red-500" />
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+              YouTube Transcript
             </h1>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Extract transcripts from videos, playlists, and channels instantly
+          <p className="text-muted-foreground text-sm md:text-base">
+            Extract transcripts from videos and playlists
           </p>
         </motion.div>
-
-        {/* Demo Notice */}
-        <DemoNotice />
 
         {/* Input Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="mb-6"
         >
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Enter YouTube URL</CardTitle>
-              <CardDescription>
-                Paste a video, playlist, or channel URL to extract transcripts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
+          <Card>
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
                   <Input
                     value={url}
                     onChange={(e) => handleUrlChange(e.target.value)}
-                    placeholder="https://youtube.com/watch?v=..."
+                    placeholder="Paste YouTube URL here..."
                     className="pr-10"
                     onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                   />
@@ -239,13 +210,12 @@ export default function Home() {
                 <Button 
                   onClick={handleSubmit} 
                   disabled={loading}
-                  size="lg"
-                  className="min-w-[120px]"
+                  className="w-full sm:w-auto"
                 >
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {loadingMessage || 'Loading'}
+                      {loadingMessage}
                     </>
                   ) : (
                     <>
@@ -261,10 +231,10 @@ export default function Home() {
 
         {/* Loading State */}
         {loading && (
-          <div className="space-y-4">
+          <div className="space-y-4 mb-6">
             <Card>
               <CardHeader>
-                <Skeleton className="h-8 w-1/3" />
+                <Skeleton className="h-6 w-1/3" />
                 <Skeleton className="h-4 w-1/2" />
               </CardHeader>
               <CardContent>
@@ -278,88 +248,98 @@ export default function Home() {
           </div>
         )}
 
-        {/* Video Info and Transcript */}
+        {/* Video Results */}
         {videoInfo && transcript.length > 0 && !loading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            {/* Video Info Card */}
+            {/* Video Info */}
             <Card>
-              <CardHeader>
-                <div className="flex items-start gap-4">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row gap-4">
                   <img 
                     src={videoInfo.thumbnail} 
                     alt={videoInfo.title}
-                    className="w-40 h-24 object-cover rounded-md"
+                    className="w-full md:w-48 h-32 md:h-28 object-cover rounded-lg"
                   />
-                  <div className="flex-1">
-                    <CardTitle className="mb-2">{videoInfo.title}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-semibold text-lg mb-2 line-clamp-2">{videoInfo.title}</h2>
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
                       <span className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
+                        <Users className="w-3 h-3" />
                         {videoInfo.author}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
+                        <Clock className="w-3 h-3" />
                         {formatDuration(videoInfo.duration)}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Eye className="w-4 h-4" />
-                        {formatNumber(videoInfo.viewCount)} views
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(videoInfo.uploadDate)}
+                        <Eye className="w-3 h-3" />
+                        {formatNumber(videoInfo.viewCount)}
                       </span>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyTranscript}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDownloadTranscript}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyTranscript}
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDownloadTranscript}
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Download
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                      >
+                        <a 
+                          href={`https://youtube.com/watch?v=${videoInfo.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Watch
+                        </a>
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </CardHeader>
+              </CardContent>
             </Card>
 
-            {/* Transcript Card */}
+            {/* Transcript */}
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle>Transcript</CardTitle>
-                    <CardDescription>
-                      {filteredTranscript.length} segments found
-                    </CardDescription>
+                    <CardTitle className="text-lg">Transcript</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {filteredTranscript.length} segments
+                    </p>
                   </div>
-                  <div className="relative">
+                  <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search transcript..."
-                      className="pl-10 w-[300px]"
+                      className="pl-10"
                     />
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="max-h-[600px] overflow-y-auto space-y-4 pr-4">
+                <div className="max-h-96 overflow-y-auto space-y-3">
                   <AnimatePresence>
                     {filteredTranscript.map((segment, index) => (
                       <motion.div
@@ -367,17 +347,15 @@ export default function Home() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        transition={{ delay: index * 0.01 }}
-                        className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        transition={{ delay: index * 0.02 }}
+                        className="flex gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
-                        <div className="flex items-start gap-4">
-                          <span className="text-sm font-mono text-muted-foreground whitespace-nowrap">
-                            {formatDuration(Math.floor(segment.start))}
-                          </span>
-                          <p className="flex-1 text-sm leading-relaxed">
-                            {segment.text}
-                          </p>
-                        </div>
+                        <span className="text-xs font-mono text-muted-foreground whitespace-nowrap mt-0.5 min-w-[3rem]">
+                          {formatDuration(Math.floor(segment.start))}
+                        </span>
+                        <p className="flex-1 text-sm leading-relaxed">
+                          {segment.text}
+                        </p>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -387,45 +365,35 @@ export default function Home() {
           </motion.div>
         )}
 
-        {/* Playlist Info */}
+        {/* Playlist Results */}
         {playlistInfo && !loading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            {/* Playlist Info Card */}
+            {/* Playlist Info */}
             <Card>
-              <CardHeader>
-                <div className="flex items-start gap-4">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row gap-4">
                   <img 
                     src={playlistInfo.thumbnail} 
                     alt={playlistInfo.title}
-                    className="w-40 h-24 object-cover rounded-md"
+                    className="w-full md:w-48 h-32 md:h-28 object-cover rounded-lg"
                   />
                   <div className="flex-1">
-                    <CardTitle className="mb-2">{playlistInfo.title}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <h2 className="font-semibold text-lg mb-2">{playlistInfo.title}</h2>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                       <span className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
+                        <Users className="w-3 h-3" />
                         {playlistInfo.author}
                       </span>
                       <span className="flex items-center gap-1">
-                        <ListVideo className="w-4 h-4" />
+                        <ListVideo className="w-3 h-3" />
                         {playlistInfo.videoCount} videos
                       </span>
                     </div>
-                    {playlistInfo.description && (
-                      <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                        {playlistInfo.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {selectedVideos.size} of {playlistInfo.videos.length} selected
-                    </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -438,28 +406,28 @@ export default function Home() {
                         size="sm"
                         onClick={() => setSelectedVideos(new Set())}
                       >
-                        Clear All
+                        Clear
                       </Button>
                     </div>
                   </div>
                 </div>
-              </CardHeader>
+              </CardContent>
             </Card>
 
             {/* Videos List */}
             <Card>
               <CardHeader>
-                <CardTitle>Videos in Playlist</CardTitle>
-                <CardDescription>
-                  Select videos to extract transcripts
-                </CardDescription>
+                <CardTitle className="text-lg">Videos</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {selectedVideos.size} of {playlistInfo.videos.length} selected
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-4">
+                <div className="space-y-2 max-h-96 overflow-y-auto">
                   {playlistInfo.videos.map((video) => (
                     <div
                       key={video.id}
-                      className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
                         selectedVideos.has(video.id) 
                           ? 'border-primary bg-primary/5' 
                           : 'border-border hover:border-primary/50'
@@ -474,24 +442,23 @@ export default function Home() {
                         setSelectedVideos(newSelected)
                       }}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <div className="relative">
                           <img 
                             src={video.thumbnail} 
                             alt={video.title}
-                            className="w-24 h-16 object-cover rounded"
+                            className="w-20 h-12 object-cover rounded"
                           />
                           {selectedVideos.has(video.id) && (
                             <div className="absolute inset-0 bg-primary/20 rounded flex items-center justify-center">
-                              <CheckCircle className="w-8 h-8 text-primary" />
+                              <CheckCircle className="w-5 h-5 text-primary" />
                             </div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium line-clamp-1">{video.title}</h4>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm line-clamp-1">{video.title}</h4>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                             <span>#{video.index}</span>
-                            <span>{video.author}</span>
                             <span>{formatDuration(video.duration)}</span>
                           </div>
                         </div>
@@ -503,16 +470,15 @@ export default function Home() {
                   <div className="mt-4 pt-4 border-t">
                     <Button 
                       className="w-full"
-                      onClick={async () => {
-                        // Here you would implement bulk transcript extraction
+                      onClick={() => {
                         toast({
-                          title: 'Feature Coming Soon',
-                          description: 'Bulk transcript extraction will be available soon',
+                          title: 'Coming Soon',
+                          description: 'Bulk extraction will be available soon'
                         })
                       }}
                     >
                       <FileText className="mr-2 h-4 w-4" />
-                      Extract Transcripts for {selectedVideos.size} Videos
+                      Extract {selectedVideos.size} Transcripts
                     </Button>
                   </div>
                 )}
