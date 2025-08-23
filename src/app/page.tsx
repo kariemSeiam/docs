@@ -36,7 +36,7 @@ import {
   formatDate,
   formatNumber 
 } from '@/lib/utils'
-import { fetchVideoTranscript, fetchPlaylistInfo } from '@/lib/youtube-api'
+import { extractVideoTranscript, extractPlaylistInfo } from '@/lib/youtube-extractor'
 import { DemoNotice } from '@/components/demo-notice'
 import type { 
   TranscriptSegment, 
@@ -49,6 +49,7 @@ import type {
 export default function Home() {
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('')
   const [contentType, setContentType] = useState<ContentType>('video')
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null)
   const [playlistInfo, setPlaylistInfo] = useState<PlaylistInfo | null>(null)
@@ -85,6 +86,7 @@ export default function Home() {
     }
 
     setLoading(true)
+    setLoadingMessage('Initializing...')
     setVideoInfo(null)
     setPlaylistInfo(null)
     setTranscript([])
@@ -97,21 +99,31 @@ export default function Home() {
           throw new Error('Invalid YouTube video URL')
         }
 
-        const data = await fetchVideoTranscript(videoId)
+        setLoadingMessage('Fetching video information...')
+        const data = await extractVideoTranscript(videoId)
         setVideoInfo(data.videoInfo)
         setTranscript(data.transcript)
         
-        toast({
-          title: 'Success',
-          description: 'Transcript loaded successfully'
-        })
-      } else if (contentType === 'playlist') {
+        if (data.transcript && data.transcript.length > 0) {
+          toast({
+            title: 'Success',
+            description: `Loaded transcript with ${data.transcript.length} segments`
+          })
+        } else {
+          toast({
+            title: 'Partial Success',
+            description: 'Video info loaded, but no transcript available for this video',
+            variant: 'destructive'
+          })
+        }
+              } else if (contentType === 'playlist') {
         const playlistId = extractPlaylistId(url)
         if (!playlistId) {
           throw new Error('Invalid YouTube playlist URL')
         }
 
-        const data = await fetchPlaylistInfo(playlistId)
+        setLoadingMessage('Loading playlist information...')
+        const data = await extractPlaylistInfo(playlistId)
         setPlaylistInfo(data)
         
         // Auto-select all videos
@@ -130,6 +142,7 @@ export default function Home() {
       })
     } finally {
       setLoading(false)
+      setLoadingMessage('')
     }
   }
 
@@ -232,7 +245,7 @@ export default function Home() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading
+                      {loadingMessage || 'Loading'}
                     </>
                   ) : (
                     <>

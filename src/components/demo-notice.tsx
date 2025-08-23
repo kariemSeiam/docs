@@ -27,10 +27,11 @@ export function DemoNotice() {
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-semibold text-sm mb-1">Demo Version</h3>
+            <h3 className="font-semibold text-sm mb-1">Real Transcript Extractor</h3>
             <p className="text-sm text-muted-foreground">
-              This is a demo version using mock data. For real transcript extraction, 
-              a backend service is required due to CORS restrictions. Check the{' '}
+              This tool extracts real YouTube transcripts when available. Some videos may not have 
+              transcripts or captions enabled. The tool uses multiple CORS proxy services to access 
+              YouTube data. Check the{' '}
               <a 
                 href="https://github.com" 
                 className="underline hover:text-primary"
@@ -39,7 +40,7 @@ export function DemoNotice() {
               >
                 GitHub repository
               </a>{' '}
-              for implementation details.
+              for technical details.
             </p>
           </div>
           <Button
