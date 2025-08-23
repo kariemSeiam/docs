@@ -6,40 +6,47 @@ export interface TranscriptSegment {
 
 export interface VideoInfo {
   id: string
+  videoId: string
   title: string
   author: string
   thumbnail: string
   duration: number
   uploadDate: string
   viewCount: number
-  description?: string
+  description: string
 }
 
 export interface PlaylistVideo {
   id: string
+  videoId: string
   title: string
   author: string
   thumbnail: string
   duration: number
-  index: number
+  uploadDate: string
+  viewCount: number
+  description: string
+  index?: number
 }
 
 export interface ChannelVideo {
   id: string
+  videoId: string
   title: string
   thumbnail: string
   duration: number
   uploadDate: string
   viewCount: number
+  description: string
 }
 
 export interface ChannelInfo {
   id: string
   name: string
-  avatar: string
+  thumbnail: string
   subscriberCount: number
-  videoCount: number
-  description?: string
+  description: string
+  videos: ChannelVideo[]
 }
 
 export interface PlaylistInfo {
@@ -48,8 +55,8 @@ export interface PlaylistInfo {
   author: string
   thumbnail: string
   videoCount: number
-  description?: string
-  videos: PlaylistVideo[]
+  description: string
+  videos: VideoInfo[]
 }
 
 export type ContentType = 'video' | 'playlist' | 'channel'
