@@ -10,7 +10,11 @@ export const metadata: Metadata = {
   description: 'Extract transcripts from YouTube videos, playlists, and channels with ease',
   keywords: ['youtube', 'transcript', 'extractor', 'video', 'subtitles'],
   authors: [{ name: 'YouTube Transcript Tool' }],
-  viewport: 'width=device-width, initial-scale=1',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
     { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' }
