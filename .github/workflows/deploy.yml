@@ -35,6 +35,15 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Check build output
+        run: |
+          echo "Checking build output..."
+          ls -la
+          if [ -d "out" ]; then
+            echo "Contents of out directory:"
+            ls -la out/
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
