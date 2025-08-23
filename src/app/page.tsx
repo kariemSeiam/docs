@@ -36,7 +36,7 @@ import {
   formatDate,
   formatNumber 
 } from '@/lib/utils'
-import { extractVideoTranscript, extractPlaylistInfo } from '@/lib/youtube-extractor'
+import { extractVideoTranscript, extractPlaylistInfo } from '@/lib/youtube-master-extractor'
 import { DemoNotice } from '@/components/demo-notice'
 import type { 
   TranscriptSegment, 
