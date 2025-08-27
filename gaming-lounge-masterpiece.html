@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaming Lounge - Cosmic Experience</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+        
+        :root {
+            --primary-glow: radial-gradient(circle at 30% 50%, #7C3AED, #312E81);
+            --accent-pulse: linear-gradient(135deg, #F97316, #DC2626, #7C3AED);
+            --glass-surface: rgba(17, 24, 39, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --neon-green: #10F981;
+            --neon-pink: #F910B9;
+            --cyber-blue: #10B9F9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: #000;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .font-mono {
+            font-family: 'Space Mono', monospace;
+        }
+
+        .glass-surface {
+            background: var(--glass-surface);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #F97316, #DC2626, #7C3AED);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .neon-glow {
+            text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+        }
+
+        .cyber-grid {
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.03) 40px, rgba(255,255,255,0.03) 41px),
+                repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.03) 40px, rgba(255,255,255,0.03) 41px);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes slide-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .animate-slide-up {
+            animation: slide-up 0.5s ease-out forwards;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Particle System Component
+        const ParticleSystem = () => {
+            const canvasRef = useRef(null);
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const particles = [];
+                const particleCount = 50;
+
+                class Particle {
+                    constructor() {
+                        this.x = Math.random() * canvas.width;
+                        this.y = Math.random() * canvas.height;
+                        this.size = Math.random() * 2 + 0.5;
+                        this.speedX = Math.random() * 0.5 - 0.25;
+                        this.speedY = Math.random() * 0.5 - 0.25;
+                        this.opacity = Math.random() * 0.5 + 0.3;
+                        this.color = Math.random() > 0.5 ? '#7C3AED' : '#F910B9';
+                    }
+
+                    update() {
+                        this.x += this.speedX;
+                        this.y += this.speedY;
+
+                        if (this.x > canvas.width) this.x = 0;
+                        if (this.x < 0) this.x = canvas.width;
+                        if (this.y > canvas.height) this.y = 0;
+                        if (this.y < 0) this.y = canvas.height;
+                    }
+
+                    draw() {
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                        ctx.fillStyle = this.color;
+                        ctx.globalAlpha = this.opacity;
+                        ctx.fill();
+                        ctx.globalAlpha = 1;
+                    }
+                }
+
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new Particle());
+                }
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach(particle => {
+                        particle.update();
+                        particle.draw();
+                    });
+                    requestAnimationFrame(animate);
+                };
+
+                animate();
+
+                const handleResize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            return <canvas ref={canvasRef} className="opacity-30" />;
+        };
+
+        // Main App Component
+        const GamingLoungeApp = () => {
+            const [activeZone, setActiveZone] = useState('nexus');
+            const [selectedRoom, setSelectedRoom] = useState(null);
+            const [sessionActive, setSessionActive] = useState(false);
+            const [timeRemaining, setTimeRemaining] = useState(0);
+
+            // Icon components from Lucide
+            const icons = {
+                Hexagon: lucide.Hexagon,
+                Swords: lucide.Swords,
+                Archive: lucide.Archive,
+                Brain: lucide.Brain,
+                Wifi: lucide.Wifi,
+                Coffee: lucide.Coffee,
+                Music: lucide.Music,
+                Wind: lucide.Wind,
+                User: lucide.User,
+                Trophy: lucide.Trophy,
+                CreditCard: lucide.CreditCard,
+                History: lucide.History,
+                SkipBack: lucide.SkipBack,
+                PlayCircle: lucide.PlayCircle,
+                SkipForward: lucide.SkipForward,
+                Gamepad2: lucide.Gamepad2
+            };
+
+            // Room data
+            const rooms = [
+                { id: 1, name: 'ALPHA CORE', status: 'available', energy: 85, features: ['RTX 4080', 'VR Ready', '7.1 Audio'], currentGame: null },
+                { id: 2, name: 'BETA FLUX', status: 'occupied', energy: 60, features: ['RTX 4070', '5.1 Audio'], currentGame: 'Spider-Man Remastered' },
+                { id: 3, name: 'GAMMA VOID', status: 'premium', energy: 100, features: ['RTX 4090', 'VR Ready', '7.1 Audio', 'STREAM'], currentGame: null },
+                { id: 4, name: 'DELTA NEXUS', status: 'available', energy: 75, features: ['RTX 4070'], currentGame: null }
+            ];
+
+            // Games data
+            const games = [
+                { id: 1, title: 'Spider-Man Remastered', genre: 'Action', players: '1', rating: 4.9, trending: true },
+                { id: 2, title: 'God of War', genre: 'Adventure', players: '1', rating: 4.8, trending: true },
+                { id: 3, title: 'FIFA 24', genre: 'Sports', players: '1-4', rating: 4.5, trending: false },
+                { id: 4, title: 'Gran Turismo 7', genre: 'Racing', players: '1-2', rating: 4.7, trending: false },
+                { id: 5, title: 'Mortal Kombat 11', genre: 'Fighting', players: '1-2', rating: 4.6, trending: true },
+                { id: 6, title: 'Call of Duty MW3', genre: 'Shooter', players: '1-4', rating: 4.4, trending: true },
+                { id: 7, title: 'Horizon Forbidden West', genre: 'Adventure', players: '1', rating: 4.8, trending: false },
+                { id: 8, title: 'Street Fighter 6', genre: 'Fighting', players: '1-2', rating: 4.7, trending: true },
+                { id: 9, title: 'NBA 2K24', genre: 'Sports', players: '1-4', rating: 4.3, trending: false }
+            ];
+
+            // Timer effect
+            useEffect(() => {
+                if (sessionActive && timeRemaining > 0) {
+                    const timer = setInterval(() => {
+                        setTimeRemaining(prev => prev - 1);
+                    }, 1000);
+                    return () => clearInterval(timer);
+                }
+            }, [sessionActive, timeRemaining]);
+
+            // Format time
+            const formatTime = (seconds) => {
+                const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
+                const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                return `${hours}:${minutes}:${secs}`;
+            };
+
+            // Handle room booking
+            const handleRoomBooking = (room) => {
+                if (room.status === 'available' || room.status === 'premium') {
+                    setSelectedRoom(room);
+                    setSessionActive(true);
+                    setTimeRemaining(3600); // 1 hour session
+                    setActiveZone('vault');
+                }
+            };
+
+            // Nexus Zone Component
+            const NexusZone = () => (
+                <div className="grid grid-cols-2 gap-4 p-4">
+                    {rooms.map((room, index) => (
+                        <div
+                            key={room.id}
+                            className={`
+                                relative group overflow-hidden rounded-2xl glass-surface
+                                transform transition-all duration-500 hover:scale-105
+                                ${room.status === 'premium' ? 'ring-2 ring-yellow-500/50' : ''}
+                                animate-slide-up
+                            `}
+                            style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                            {/* Energy Field Background */}
+                            <div className="absolute inset-0 opacity-20">
+                                <div className={`
+                                    absolute inset-0 
+                                    ${room.status === 'available' ? 'bg-gradient-to-br from-green-500 to-emerald-600' : ''}
+                                    ${room.status === 'occupied' ? 'bg-gradient-to-br from-red-500 to-orange-600' : ''}
+                                    ${room.status === 'premium' ? 'bg-gradient-to-br from-yellow-400 to-amber-500' : ''}
+                                `} />
+                            </div>
+
+                            <div className="relative z-10 p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white mb-1">{room.name}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`
+                                                w-2 h-2 rounded-full animate-pulse
+                                                ${room.status === 'available' ? 'bg-green-400' : ''}
+                                                ${room.status === 'occupied' ? 'bg-red-400' : ''}
+                                                ${room.status === 'premium' ? 'bg-yellow-400' : ''}
+                                            `} />
+                                            <span className="text-xs text-gray-400 uppercase">{room.status}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Energy Meter */}
+                                    <div className="relative w-16 h-16">
+                                        <svg className="transform -rotate-90 w-16 h-16">
+                                            <circle
+                                                cx="32"
+                                                cy="32"
+                                                r="28"
+                                                stroke="rgba(255,255,255,0.1)"
+                                                strokeWidth="4"
+                                                fill="none"
+                                            />
+                                            <circle
+                                                cx="32"
+                                                cy="32"
+                                                r="28"
+                                                stroke="url(#gradient)"
+                                                strokeWidth="4"
+                                                fill="none"
+                                                strokeDasharray={`${2 * Math.PI * 28}`}
+                                                strokeDashoffset={`${2 * Math.PI * 28 * (1 - room.energy / 100)}`}
+                                                className="transition-all duration-1000"
+                                            />
+                                            <defs>
+                                                <linearGradient id="gradient">
+                                                    <stop offset="0%" stopColor="#10F981" />
+                                                    <stop offset="100%" stopColor="#10B9F9" />
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-white">{room.energy}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Features */}
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {room.features.map((feature) => (
+                                        <div
+                                            key={feature}
+                                            className="px-2 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
+                                        >
+                                            <span className="text-xs text-white/80">{feature}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Current Game or Action */}
+                                {room.currentGame ? (
+                                    <div className="mt-4 p-3 rounded-lg bg-black/40 backdrop-blur-sm">
+                                        <p className="text-xs text-gray-400">NOW PLAYING</p>
+                                        <p className="text-sm text-white font-medium">{room.currentGame}</p>
+                                    </div>
+                                ) : (room.status === 'available' || room.status === 'premium') ? (
+                                    <button 
+                                        onClick={() => handleRoomBooking(room)}
+                                        className="
+                                            w-full mt-4 py-3 rounded-lg font-bold text-sm
+                                            bg-gradient-to-r from-purple-600 to-pink-600
+                                            hover:from-purple-500 hover:to-pink-500
+                                            transform transition-all duration-300 hover:scale-105
+                                            relative overflow-hidden group
+                                        "
+                                    >
+                                        <span className="relative z-10">ENTER CHAMBER</span>
+                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                                    </button>
+                                ) : null}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+
+            // Arena Zone Component
+            const ArenaZone = () => {
+                const [selectedGenre, setSelectedGenre] = useState('all');
+                const genres = ['all', 'Action', 'Adventure', 'Sports', 'Racing', 'Fighting', 'Shooter'];
+                
+                const filteredGames = selectedGenre === 'all' 
+                    ? games 
+                    : games.filter(game => game.genre.toLowerCase() === selectedGenre.toLowerCase());
+
+                return (
+                    <div className="p-4 space-y-6">
+                        {/* Genre Filter */}
+                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                            {genres.map((genre) => (
+                                <button
+                                    key={genre}
+                                    onClick={() => setSelectedGenre(genre)}
+                                    className={`
+                                        px-6 py-2 rounded-full font-medium text-sm transition-all duration-300 whitespace-nowrap
+                                        ${selectedGenre === genre
+                                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25'
+                                            : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                                        }
+                                    `}
+                                >
+                                    {genre.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Games Grid */}
+                        <div className="grid grid-cols-3 gap-4">
+                            {filteredGames.map((game, index) => (
+                                <div
+                                    key={game.id}
+                                    className="group relative animate-slide-up"
+                                    style={{ animationDelay: `${index * 0.05}s` }}
+                                >
+                                    <div className="
+                                        relative overflow-hidden rounded-xl
+                                        transform transition-all duration-500
+                                        group-hover:scale-110 group-hover:z-10
+                                    ">
+                                        {/* Game Cover */}
+                                        <div className="aspect-[3/4] bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                                            <icons.Gamepad2 className="w-12 h-12 text-gray-600" />
+                                        </div>
+
+                                        {/* Overlay Info */}
+                                        <div className="
+                                            absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent
+                                            opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                                            flex flex-col justify-end p-3
+                                        ">
+                                            <h4 className="text-white font-bold text-sm mb-1 line-clamp-1">{game.title}</h4>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-gray-300">{game.genre}</span>
+                                                <span className="text-xs text-yellow-400">★ {game.rating}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Trending Badge */}
+                                        {game.trending && (
+                                            <div className="absolute top-2 right-2">
+                                                <div className="px-2 py-1 rounded-full bg-red-500/90 backdrop-blur-sm">
+                                                    <span className="text-xs font-bold text-white">HOT</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
+            // Vault Zone Component
+            const VaultZone = () => {
+                const [services, setServices] = useState({
+                    drinks: true,
+                    music: true,
+                    climate: { enabled: true, temp: 22 }
+                });
+
+                return (
+                    <div className="p-4 space-y-6">
+                        {/* Session Timer */}
+                        {sessionActive && (
+                            <div className="glass-surface rounded-2xl p-8 relative overflow-hidden animate-slide-up">
+                                <div className="absolute inset-0 opacity-10">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 animate-pulse" />
+                                </div>
+
+                                <div className="relative z-10 text-center">
+                                    <h2 className="text-sm text-gray-400 mb-2">SESSION ACTIVE</h2>
+                                    <div className="text-5xl font-bold text-white tracking-wider font-mono">
+                                        {formatTime(timeRemaining)}
+                                    </div>
+                                    {selectedRoom && (
+                                        <p className="text-lg text-purple-400 mt-2">{selectedRoom.name}</p>
+                                    )}
+                                    <div className="mt-4 flex justify-center gap-4">
+                                        <button className="px-6 py-2 rounded-lg bg-green-600/20 border border-green-500 text-green-400 hover:bg-green-600/30 transition-colors">
+                                            EXTEND TIME
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setSessionActive(false);
+                                                setSelectedRoom(null);
+                                                setTimeRemaining(0);
+                                                setActiveZone('nexus');
+                                            }}
+                                            className="px-6 py-2 rounded-lg bg-red-600/20 border border-red-500 text-red-400 hover:bg-red-600/30 transition-colors"
+                                        >
+                                            END SESSION
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Service Controls */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Drinks Service */}
+                            <div className="glass-surface rounded-xl p-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                                            <icons.Coffee className="w-5 h-5 text-white" />
+                                        </div>
+                                        <h3 className="text-white font-bold">HYDRATION</h3>
+                                    </div>
+                                </div>
+                                <button 
+                                    disabled={!sessionActive}
+                                    className={`
+                                        w-full py-3 rounded-lg transition-colors
+                                        ${sessionActive 
+                                            ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-white' 
+                                            : 'bg-gray-800/50 border border-gray-700 text-gray-500 cursor-not-allowed'
+                                        }
+                                    `}
+                                >
+                                    {sessionActive ? 'ORDER DRINKS' : 'SESSION REQUIRED'}
+                                </button>
+                            </div>
+
+                            {/* Music Control */}
+                            <div className="glass-surface rounded-xl p-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                                            <icons.Music className="w-5 h-5 text-white" />
+                                        </div>
+                                        <h3 className="text-white font-bold">AUDIO</h3>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                        <div className={`h-full w-3/4 rounded-full transition-all ${sessionActive ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gray-600'}`} />
+                                    </div>
+                                    <div className="flex justify-center gap-4">
+                                        <button disabled={!sessionActive} className={`${sessionActive ? 'text-gray-400 hover:text-white' : 'text-gray-600'} transition-colors`}>
+                                            <icons.SkipBack className="w-5 h-5" />
+                                        </button>
+                                        <button disabled={!sessionActive} className={`${sessionActive ? 'text-white' : 'text-gray-600'}`}>
+                                            <icons.PlayCircle className="w-8 h-8" />
+                                        </button>
+                                        <button disabled={!sessionActive} className={`${sessionActive ? 'text-gray-400 hover:text-white' : 'text-gray-600'} transition-colors`}>
+                                            <icons.SkipForward className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Climate Control */}
+                            <div className="glass-surface rounded-xl p-6 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                                            <icons.Wind className="w-5 h-5 text-white" />
+                                        </div>
+                                        <h3 className="text-white font-bold">CLIMATE</h3>
+                                    </div>
+                                    <span className={`text-2xl font-bold ${sessionActive ? 'text-white' : 'text-gray-500'}`}>
+                                        {services.climate.temp}°
+                                    </span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button 
+                                        disabled={!sessionActive}
+                                        onClick={() => setServices({...services, climate: {...services.climate, temp: services.climate.temp - 1}})}
+                                        className={`flex-1 py-2 rounded-lg transition-colors ${
+                                            sessionActive 
+                                                ? 'bg-blue-600/20 border border-blue-500 text-blue-400 hover:bg-blue-600/30' 
+                                                : 'bg-gray-800/50 border border-gray-700 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        COOL
+                                    </button>
+                                    <button 
+                                        disabled={!sessionActive}
+                                        onClick={() => setServices({...services, climate: {...services.climate, temp: services.climate.temp + 1}})}
+                                        className={`flex-1 py-2 rounded-lg transition-colors ${
+                                            sessionActive 
+                                                ? 'bg-orange-600/20 border border-orange-500 text-orange-400 hover:bg-orange-600/30' 
+                                                : 'bg-gray-800/50 border border-gray-700 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        WARM
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* WiFi Access */}
+                            <div className="glass-surface rounded-xl p-6 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                                            <icons.Wifi className="w-5 h-5 text-white" />
+                                        </div>
+                                        <h3 className="text-white font-bold">NETWORK</h3>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <div className={`w-1 h-3 rounded-full ${sessionActive ? 'bg-green-400' : 'bg-gray-600'}`} />
+                                        <div className={`w-1 h-4 rounded-full ${sessionActive ? 'bg-green-400' : 'bg-gray-600'}`} />
+                                        <div className={`w-1 h-5 rounded-full ${sessionActive ? 'bg-green-400' : 'bg-gray-600'}`} />
+                                    </div>
+                                </div>
+                                <button 
+                                    disabled={!sessionActive}
+                                    className={`
+                                        w-full py-3 rounded-lg transition-colors
+                                        ${sessionActive 
+                                            ? 'bg-green-600/20 border border-green-500 text-green-400' 
+                                            : 'bg-gray-800/50 border border-gray-700 text-gray-500 cursor-not-allowed'
+                                        }
+                                    `}
+                                >
+                                    {sessionActive ? 'CONNECTED' : 'SESSION REQUIRED'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {!sessionActive && (
+                            <div className="text-center py-12">
+                                <p className="text-gray-400 text-lg">Book a room to access all services</p>
+                                <button 
+                                    onClick={() => setActiveZone('nexus')}
+                                    className="mt-4 px-8 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold hover:from-purple-500 hover:to-pink-500 transition-all"
+                                >
+                                    BROWSE ROOMS
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // Profile Zone Component
+            const ProfileZone = () => {
+                const playerStats = {
+                    level: 42,
+                    hoursPlayed: 247,
+                    favoriteGenre: 'Action RPG',
+                    achievements: 89,
+                    winRate: 67,
+                    reputation: 4.9
+                };
+
+                return (
+                    <div className="p-4 space-y-6">
+                        {/* Player Card */}
+                        <div className="glass-surface rounded-2xl p-8 relative overflow-hidden animate-slide-up">
+                            <div className="absolute inset-0 opacity-5 cyber-grid" />
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-6">
+                                    <div className="relative">
+                                        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 p-0.5">
+                                            <div className="w-full h-full rounded-2xl bg-gray-900 flex items-center justify-center">
+                                                <icons.User className="w-12 h-12 text-white" />
+                                            </div>
+                                        </div>
+                                        <div className="absolute -bottom-2 -right-2 px-3 py-1 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500">
+                                            <span className="text-xs font-bold text-white">LVL {playerStats.level}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <h2 className="text-2xl font-bold text-white mb-2">COSMIC_GAMER</h2>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                                <p className="text-xs text-gray-400">HOURS</p>
+                                                <p className="text-lg font-bold text-white">{playerStats.hoursPlayed}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-400">WIN RATE</p>
+                                                <p className="text-lg font-bold text-green-400">{playerStats.winRate}%</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-400">REP</p>
+                                                <p className="text-lg font-bold text-yellow-400">★{playerStats.reputation}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <button className="glass-surface rounded-xl p-6 hover:border-purple-500/50 transition-all duration-300 group animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                                <div className="flex items-center gap-3">
+                                    <icons.CreditCard className="w-5 h-5 text-purple-400 group-hover:text-purple-300" />
+                                    <span className="text-white font-medium">Payment Methods</span>
+                                </div>
+                            </button>
+
+                            <button className="glass-surface rounded-xl p-6 hover:border-pink-500/50 transition-all duration-300 group animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                                <div className="flex items-center gap-3">
+                                    <icons.History className="w-5 h-5 text-pink-400 group-hover:text-pink-300" />
+                                    <span className="text-white font-medium">Session History</span>
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* Achievement Showcase */}
+                        <div className="glass-surface rounded-xl p-6 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                            <h3 className="text-white font-bold mb-4">RECENT ACHIEVEMENTS</h3>
+                            <div className="grid grid-cols-4 gap-3">
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div
+                                        key={i}
+                                        className="aspect-square rounded-lg bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 flex items-center justify-center animate-float"
+                                        style={{ animationDelay: `${i * 0.2}s` }}
+                                    >
+                                        <icons.Trophy className="w-6 h-6 text-yellow-400" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-black text-white relative">
+                    {/* Particle System */}
+                    <ParticleSystem />
+
+                    {/* Background Gradient */}
+                    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-black to-pink-900/20" />
+
+                    {/* Main Content */}
+                    <div className="relative z-10 min-h-screen flex flex-col">
+                        {/* Status HUD */}
+                        <header className="fixed top-0 w-full h-20 glass-surface z-50">
+                            <div className="h-full px-6 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-blue-400 animate-pulse-glow" />
+                                        <div className="absolute inset-0 rounded-full bg-white/20 animate-ping" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm text-gray-400">SYSTEM STATUS</h3>
+                                        <p className="text-white font-bold neon-glow">ONLINE</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 max-w-md mx-8">
+                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 transition-all duration-1000"
+                                            style={{width: sessionActive ? '75%' : '25%'}}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <icons.Wifi className="w-5 h-5 text-green-400" />
+                                    <span className="text-xs text-gray-400">NEURAL LINK</span>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Content */}
+                        <main className="flex-1 pt-24 pb-24">
+                            {activeZone === 'nexus' && <NexusZone />}
+                            {activeZone === 'arena' && <ArenaZone />}
+                            {activeZone === 'vault' && <VaultZone />}
+                            {activeZone === 'profile' && <ProfileZone />}
+                        </main>
+
+                        {/* Quantum Navigation */}
+                        <nav className="fixed bottom-0 w-full h-20 glass-surface z-50">
+                            <div className="h-full flex items-center justify-around">
+                                {[
+                                    { id: 'nexus', icon: icons.Hexagon, label: 'NEXUS' },
+                                    { id: 'arena', icon: icons.Swords, label: 'ARENA' },
+                                    { id: 'vault', icon: icons.Archive, label: 'VAULT' },
+                                    { id: 'profile', icon: icons.Brain, label: 'NEURAL' }
+                                ].map((zone) => {
+                                    const Icon = zone.icon;
+                                    return (
+                                        <button
+                                            key={zone.id}
+                                            onClick={() => setActiveZone(zone.id)}
+                                            className={`
+                                                relative group px-6 py-3 rounded-xl transition-all duration-300
+                                                ${activeZone === zone.id 
+                                                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                                                    : 'text-gray-400 hover:text-white'
+                                                }
+                                            `}
+                                        >
+                                            <Icon className="w-6 h-6 mb-1 mx-auto" />
+                                            <span className="text-xs font-bold block">{zone.label}</span>
+                                            {activeZone === zone.id && (
+                                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-pink-500 to-blue-500 rounded-full" />
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        ReactDOM.render(<GamingLoungeApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
